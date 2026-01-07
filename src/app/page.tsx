@@ -1,11 +1,10 @@
 'use client';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, RefreshCcw, AlertCircle, CheckCircle2, Sparkles } from 'lucide-react';
+import { Send, RefreshCcw, AlertCircle, CheckCircle2, Sparkles, ShieldCheck } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-// Helper untuk tailwind classes
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -18,16 +17,24 @@ export default function Home() {
   const handlePredict = async () => {
     if (!text.trim()) return;
     setLoading(true);
+    
+    // Link Backend Vercel Anda
+    const BACKEND_URL = 'https://tugasss-backend.vercel.app/api/predict';
+
     try {
-      const response = await fetch('http://localhost:3001/predict', {
+      const response = await fetch(BACKEND_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text }),
       });
+      
+      if (!response.ok) throw new Error("Gagal terhubung ke server.");
+      
       const data = await response.json();
       setResult(data);
     } catch (error) {
       console.error("Error:", error);
+      alert("Terjadi kesalahan saat melakukan analisis.");
     } finally {
       setLoading(false);
     }
@@ -39,7 +46,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans selection:bg-blue-100">
+    <main className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans relative">
       {/* Background Decor */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] rounded-full bg-blue-100/50 blur-[120px]" />
@@ -54,8 +61,8 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-sm font-medium mb-4"
           >
-            <Sparkles size={14} />
-            A Space for Emotional Clarity
+            <ShieldCheck size={14} />
+            Mental Health Screening Tool
           </motion.div>
           <motion.h1 
             initial={{ opacity: 0, y: -10 }}
@@ -71,7 +78,7 @@ export default function Home() {
             transition={{ delay: 0.2 }}
             className="text-slate-500 text-lg"
           >
-            Understand the echoes of your heart and find clarity in every line you write.
+            Sistem klasifikasi teks untuk deteksi dini indikasi depresi.
           </motion.p>
         </header>
 
@@ -85,7 +92,7 @@ export default function Home() {
           <div className="p-6">
             <textarea
               className="w-full h-48 p-4 text-lg bg-transparent border-none focus:ring-0 resize-none placeholder:text-slate-400 text-slate-700"
-              placeholder="Ceritakan apa yang sedang Anda pikirkan atau rasakan hari ini..."
+              placeholder="Ceritakan apa yang sedang Anda pikirkan atau rasakan..."
               value={text}
               onChange={(e) => setText(e.target.value)}
             />
@@ -95,7 +102,7 @@ export default function Home() {
             <button
               onClick={reset}
               className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
-              title="Reset"
+              title="Reset Input"
             >
               <RefreshCcw size={20} />
             </button>
@@ -114,7 +121,7 @@ export default function Home() {
                 <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
-                  Mulai Analisis <Send size={18} />
+                  Analisis Teks <Send size={18} />
                 </>
               )}
             </button>
@@ -143,13 +150,22 @@ export default function Home() {
                   {result.label === 1 ? <AlertCircle size={32} /> : <CheckCircle2 size={32} />}
                 </div>
                 
-                <h3 className="text-sm font-bold uppercase tracking-widest opacity-60 mb-1">Analisis Selesai</h3>
-                <p className="text-3xl font-bold mb-3 tracking-tight">Terdeteksi: {result.status}</p>
-                <p className="text-slate-500 max-w-md leading-relaxed">
+                <h3 className="text-sm font-bold uppercase tracking-widest opacity-60 mb-1">Hasil Klasifikasi</h3>
+                <p className="text-3xl font-bold mb-4 tracking-tight">Kondisi: {result.status}</p>
+                
+                <div className="h-px w-full bg-current opacity-10 mb-6" />
+
+                <p className="text-slate-600 max-w-md leading-relaxed">
                   {result.label === 1 
-                    ? "Sistem mendeteksi indikasi beban emosional yang tinggi. Jangan ragu untuk berbagi cerita dengan orang terpercaya atau tenaga profesional." 
-                    : "Sistem mendeteksi nada emosional yang stabil. Tetap jaga kesehatan mental Anda dan lakukan aktivitas yang membuat Anda bahagia."}
+                    ? "Sistem mendeteksi adanya indikasi beban emosional yang signifikan. Hasil ini menunjukkan perlunya perhatian lebih terhadap kesehatan mental Anda." 
+                    : "Sistem tidak mendeteksi indikasi depresi pada teks ini. Tetap jaga keseimbangan emosional dan kesehatan pikiran Anda."}
                 </p>
+
+                {result.label === 1 && (
+                  <div className="mt-6 p-4 bg-white/50 rounded-xl border border-red-200 text-sm text-red-800">
+                    <strong>Saran:</strong> Pertimbangkan untuk berbicara dengan teman dekat atau berkonsultasi dengan profesional.
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
@@ -157,7 +173,8 @@ export default function Home() {
 
         {/* Footer Info */}
         <footer className="mt-20 text-center text-slate-400 text-sm">
-          <p className="mt-2 italic">Disclaimer: Alat ini bukan pengganti diagnosa medis profesional.</p>
+          <p className="font-medium">Senandika: Depression Detection System</p>
+          <p className="mt-2 italic">Disclaimer: Alat ini adalah instrumen penyaringan awal berbasis AI dan bukan merupakan diagnosis medis final.</p>
         </footer>
       </div>
     </main>
